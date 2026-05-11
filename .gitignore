@@ -1,0 +1,23 @@
+# Environment
+backend/.env
+
+# Python
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Data (large files — not for GitHub)
+backend/pdfs/
+backend/data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+
+#Progress.md
+PROGRESS_TASK3.md
