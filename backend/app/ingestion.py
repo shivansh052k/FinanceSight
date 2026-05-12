@@ -71,8 +71,11 @@ def _chunk_text(text: str) -> List[Tuple[str, int]]:
             chunks.append((chunk, cursor))
 
         # step back by overlap, but never behind cursor+1
+        if split_at >= length:
+            break
         next_cursor = split_at - CHUNK_OVERLAP
         cursor = max(next_cursor, cursor + 1)
+        
 
     return chunks
 

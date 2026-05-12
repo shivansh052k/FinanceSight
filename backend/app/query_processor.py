@@ -3,7 +3,8 @@ import logging
 import os
 from typing import Dict, List, Optional, TypedDict
 
-from mistralai import Mistral
+from mistralai.client.sdk import Mistral
+
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,8 @@ import time
 from typing import List
 
 import numpy as np
-from mistralai import Mistral
+from mistralai.client.sdk import Mistral
+
 
 logger = logging.getLogger(__name__)
 

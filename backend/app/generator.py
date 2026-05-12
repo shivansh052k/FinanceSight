@@ -3,7 +3,7 @@ import os
 import re
 from typing import Dict, List, Optional, TypedDict
 
-from mistralai import Mistral
+from mistralai.client.sdk import Mistral
 
 from app.ingestion import Chunk
 
