@@ -5,8 +5,8 @@ from typing import List, Optional, Tuple, TypedDict
 
 logger = logging.getLogger(__name__)
 
-CHUNK_SIZE = 2048
-CHUNK_OVERLAP = 256
+CHUNK_SIZE = 4096
+CHUNK_OVERLAP = 400
 
 # Split priority: prefer semantic boundaries before hard cuts
 _SPLIT_DELIMITERS: List[Tuple[str, int]] = [

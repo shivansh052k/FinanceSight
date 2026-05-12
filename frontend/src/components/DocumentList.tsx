@@ -3,32 +3,55 @@ import type { Document } from "../types";
 interface Props {
   documents: Document[];
   totalChunks: number;
+  onRemove: (filename: string) => void;
 }
 
-const statusStyles: Record<string, string> = {
-  complete: "bg-green-100 text-green-800",
-  processing: "bg-yellow-100 text-yellow-800",
-  error: "bg-red-100 text-red-800",
+const statusConfig: Record<string, { dot: string; label: string }> = {
+  complete:   { dot: "bg-green-500",  label: "Ready" },
+  processing: { dot: "bg-yellow-400 animate-pulse", label: "Processing" },
+  error:      { dot: "bg-red-500",    label: "Error" },
 };
 
-export function DocumentList({ documents, totalChunks }: Props) {
+export function DocumentList({ documents, totalChunks, onRemove }: Props) {
   if (documents.length === 0) {
-    return <p className="text-sm text-gray-400 text-center py-4">No documents ingested yet.</p>;
+    return (
+      <p className="text-xs text-zinc-400 text-center py-6 px-2">
+        No documents yet. Upload PDFs to get started.
+      </p>
+    );
   }
 
   return (
-    <div className="space-y-2">
-      {documents.map((doc) => (
-        <div key={doc.filename} className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 bg-white">
-          <span className="text-sm text-gray-800 truncate max-w-[70%]" title={doc.filename}>
-            {doc.filename}
-          </span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusStyles[doc.status] ?? "bg-gray-100 text-gray-600"}`}>
-            {doc.status === "processing" ? "⏳ processing" : doc.status}
-          </span>
-        </div>
-      ))}
-      <p className="text-xs text-gray-400 text-right pt-1">{totalChunks.toLocaleString()} total chunks</p>
+    <div className="space-y-1">
+      {documents.map((doc) => {
+        const cfg = statusConfig[doc.status] ?? { dot: "bg-zinc-400", label: doc.status };
+        return (
+          <div
+            key={doc.filename}
+            className="group flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-zinc-100 transition-colors"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-zinc-800 truncate" title={doc.filename}>
+                {doc.filename}
+              </p>
+              <p className="text-[10px] text-zinc-400">{cfg.label}</p>
+            </div>
+            {doc.status === "complete" && (
+              <button
+                onClick={() => onRemove(doc.filename)}
+                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all text-xs shrink-0"
+                title="Remove"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        );
+      })}
+      <p className="text-[10px] text-zinc-400 px-2 pt-1">
+        {totalChunks.toLocaleString()} chunks indexed
+      </p>
     </div>
   );
 }

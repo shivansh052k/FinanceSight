@@ -60,6 +60,25 @@ class VectorStore:
             self._embeddings = None
             self._source_index = {}
         logger.info("Vector store cleared.")
+    
+    def remove_source(self, source: str) -> bool:
+        """Remove all chunks for source. Rebuilds index. Thread-safe. Returns False if not found."""
+        with self._lock:
+            if source not in self._source_index:
+                return False
+
+            remove_set = set(self._source_index[source])
+            keep = [i for i in range(len(self._chunks)) if i not in remove_set]
+
+            self._chunks = [self._chunks[i] for i in keep]
+            self._embeddings = self._embeddings[keep] if keep and self._embeddings is not None else None
+
+            self._source_index = {}
+            for i, chunk in enumerate(self._chunks):
+                self._source_index.setdefault(chunk["source"], []).append(i)
+
+            logger.info("Removed source '%s'. Store total: %d.", source, len(self._chunks))
+            return True
 
     # ------------------------------------------------------------------
     # Read

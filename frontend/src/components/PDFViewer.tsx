@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Citation } from "../types";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -15,36 +15,46 @@ interface Props {
   onPageChange: (page: number) => void;
 }
 
+const MIN_SCALE = 0.75;
+const MAX_SCALE = 3.0;
+const SCALE_STEP = 0.25;
+
 export function PDFViewer({ filename, page, activeCitation, onClose, onPageChange }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
   const pdfRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
-  const totalPagesRef = useRef(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [scale, setScale] = useState(1.5);
+  const [pdfReady, setPdfReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setPdfReady(false);
+    setTotalPages(0);
 
     async function load() {
+      pdfRef.current?.destroy();
+      pdfRef.current = null;
       try {
         const pdf = await pdfjsLib.getDocument(
           `http://localhost:8000/pdfs/${encodeURIComponent(filename)}`
         ).promise;
         if (cancelled) { pdf.destroy(); return; }
         pdfRef.current = pdf;
-        totalPagesRef.current = pdf.numPages;
+        setTotalPages(pdf.numPages);
+        setPdfReady(true);
       } catch (err) {
         console.error("PDF load failed:", err);
       }
     }
 
-    pdfRef.current?.destroy();
-    pdfRef.current = null;
     load();
-
     return () => { cancelled = true; };
   }, [filename]);
 
   useEffect(() => {
+    if (!pdfReady) return;
+
     async function render() {
       const pdf = pdfRef.current;
       const canvas = canvasRef.current;
@@ -59,10 +69,11 @@ export function PDFViewer({ filename, page, activeCitation, onClose, onPageChang
 
       try {
         const pdfPage = await pdf.getPage(safePage);
-        const viewport = pdfPage.getViewport({ scale: 1.5 });
+        const viewport = pdfPage.getViewport({ scale });
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         const ctx = canvas.getContext("2d")!;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         const task = pdfPage.render({ canvasContext: ctx, viewport });
         renderTaskRef.current = task;
         await task.promise;
@@ -74,52 +85,38 @@ export function PDFViewer({ filename, page, activeCitation, onClose, onPageChang
     }
 
     render();
-  }, [page, filename]);
-
-  const total = totalPagesRef.current;
+  }, [page, scale, pdfReady, filename]);
 
   return (
-    <div className="flex flex-col h-full border-l border-gray-200">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
-        <span className="text-sm font-medium text-gray-700 truncate max-w-[60%]" title={filename}>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 bg-zinc-50 shrink-0 gap-2">
+        <span className="text-xs font-medium text-zinc-700 truncate" title={filename}>
           {filename}
         </span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page <= 1}
-            className="px-2 py-1 text-xs rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-100"
-          >
-            ◀
-          </button>
-          <span className="text-xs text-gray-600">
-            {page}{total ? ` / ${total}` : ""}
-          </span>
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={total > 0 && page >= total}
-            className="px-2 py-1 text-xs rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-100"
-          >
-            ▶
-          </button>
-          <button
-            onClick={onClose}
-            className="ml-2 text-gray-400 hover:text-gray-700 text-lg leading-none"
-            aria-label="Close PDF viewer"
-          >
-            ✕
-          </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button onClick={() => setScale(s => Math.max(MIN_SCALE, +(s - SCALE_STEP).toFixed(2)))} disabled={scale <= MIN_SCALE} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">−</button>
+          <span className="text-xs text-zinc-500 w-10 text-center">{Math.round(scale * 100)}%</span>
+          <button onClick={() => setScale(s => Math.min(MAX_SCALE, +(s + SCALE_STEP).toFixed(2)))} disabled={scale >= MAX_SCALE} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">+</button>
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
+          <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">◀</button>
+          <span className="text-xs text-zinc-500 w-16 text-center">{page}{totalPages ? ` / ${totalPages}` : ""}</span>
+          <button onClick={() => onPageChange(page + 1)} disabled={totalPages > 0 && page >= totalPages} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">▶</button>
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-700 text-sm px-1">✕</button>
         </div>
       </div>
 
       {activeCitation && (
-        <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 truncate">
+        <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 line-clamp-2 shrink-0">
           {activeCitation.text}
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-gray-100 flex justify-center p-4">
-        <canvas ref={canvasRef} className="shadow-md" />
+      <div className="flex-1 overflow-auto bg-zinc-100 flex justify-center p-4">
+        {!pdfReady && (
+          <div className="flex items-center justify-center h-full text-sm text-zinc-400">Loading…</div>
+        )}
+        <canvas ref={canvasRef} className={`shadow-md ${!pdfReady ? "hidden" : ""}`} />
       </div>
     </div>
   );

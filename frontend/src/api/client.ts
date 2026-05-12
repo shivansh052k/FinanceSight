@@ -40,3 +40,7 @@ export async function checkHealth(): Promise<boolean> {
     return false;
   }
 }
+
+export async function deleteDocument(filename: string): Promise<void> {
+  await api.delete(`/documents/${encodeURIComponent(filename)}`);
+}

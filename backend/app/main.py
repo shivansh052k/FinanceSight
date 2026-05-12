@@ -34,6 +34,7 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 _PDF_MAGIC = b"%PDF"
 
 _status_lock = threading.Lock()
+_ingest_semaphore = threading.Semaphore(1)
 _ingestion_status: Dict[str, str] = {}
 
 
@@ -99,22 +100,22 @@ def _validate_pdf(file: UploadFile, content: bytes) -> Optional[str]:
 
 
 def _ingest_file(pdf_path: Path, source_name: str) -> None:
-    """Synchronous ingestion task — runs in FastAPI's thread pool via BackgroundTasks."""
-    try:
-        chunks = ingest_pdf(str(pdf_path))
-        if not chunks:
-            logger.warning("No chunks extracted from %s.", source_name)
+    with _ingest_semaphore:
+        try:
+            chunks = ingest_pdf(str(pdf_path))
+            if not chunks:
+                logger.warning("No chunks extracted from %s.", source_name)
+                _set_status(source_name, "error")
+                return
+            embeddings = embed_texts([c["text"] for c in chunks])
+            store.add(chunks, embeddings)
+            store.save()
+            build_bm25_index()
+            _set_status(source_name, "complete")
+            logger.info("Ingested %s: %d chunks.", source_name, len(chunks))
+        except Exception as exc:
+            logger.error("Ingestion failed for %s: %s", source_name, exc)
             _set_status(source_name, "error")
-            return
-        embeddings = embed_texts([c["text"] for c in chunks])
-        store.add(chunks, embeddings)
-        store.save()
-        build_bm25_index()
-        _set_status(source_name, "complete")
-        logger.info("Ingested %s: %d chunks.", source_name, len(chunks))
-    except Exception as exc:
-        logger.error("Ingestion failed for %s: %s", source_name, exc)
-        _set_status(source_name, "error")
 
 
 # ---------------------------------------------------------------------------
@@ -145,7 +146,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
 )
 
@@ -178,6 +179,20 @@ async def list_documents() -> Dict[str, Any]:
 
     return {"documents": documents, "total_chunks": store.chunk_count()}
 
+@app.delete("/documents/{filename}")
+async def delete_document(filename: str) -> Dict[str, Any]:
+    safe_name = _sanitize_filename(filename)
+    if not store.has_source(safe_name):
+        raise HTTPException(status_code=404, detail="Document not found")
+    store.remove_source(safe_name)
+    store.save()
+    build_bm25_index()
+    pdf_path = PDFS_DIR / safe_name
+    if pdf_path.exists():
+        pdf_path.unlink()
+    with _status_lock:
+        _ingestion_status.pop(safe_name, None)
+    return {"filename": safe_name, "status": "removed"}
 
 @app.post("/ingest", status_code=202)
 async def ingest(

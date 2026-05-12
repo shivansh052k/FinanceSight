@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 RRF_K = 60        # RRF constant — dampens rank differences, standard value
 SEMANTIC_TOP_K = 20
 BM25_TOP_K = 20
-FINAL_TOP_K = 5
+FINAL_TOP_K = 8
 
 # Module-level BM25 index — rebuilt whenever store contents change
 _bm25_index: Optional[BM25Index] = None
