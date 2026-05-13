@@ -15,7 +15,7 @@ const statusConfig: Record<string, { dot: string; label: string }> = {
 export function DocumentList({ documents, totalChunks, onRemove }: Props) {
   if (documents.length === 0) {
     return (
-      <p className="text-xs text-zinc-400 text-center py-6 px-2">
+      <p className="text-xs text-zinc-400 dark:text-zinc-600 text-center py-6 px-2">
         No documents yet. Upload PDFs to get started.
       </p>
     );
@@ -28,14 +28,14 @@ export function DocumentList({ documents, totalChunks, onRemove }: Props) {
         return (
           <div
             key={doc.filename}
-            className="group flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-zinc-100 transition-colors"
+            className="group flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-zinc-800 truncate" title={doc.filename}>
+              <p className="text-xs text-zinc-800 dark:text-zinc-200 truncate" title={doc.filename}>
                 {doc.filename}
               </p>
-              <p className="text-[10px] text-zinc-400">{cfg.label}</p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{cfg.label}</p>
             </div>
             {doc.status === "complete" && (
               <button
@@ -49,7 +49,7 @@ export function DocumentList({ documents, totalChunks, onRemove }: Props) {
           </div>
         );
       })}
-      <p className="text-[10px] text-zinc-400 px-2 pt-1">
+      <p className="text-[10px] text-zinc-400 dark:text-zinc-600 px-2 pt-1">
         {totalChunks.toLocaleString()} chunks indexed
       </p>
     </div>

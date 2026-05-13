@@ -40,8 +40,8 @@ export function ChatPane({ messages, loading, error, onSend, onCitationClick }: 
             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center mb-4">
               <span className="text-white text-lg font-bold">FS</span>
             </div>
-            <h2 className="text-lg font-semibold text-zinc-800 mb-1">FinanceSight</h2>
-            <p className="text-sm text-zinc-500 max-w-sm">
+            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-1">FinanceSight</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">
               Upload SEC 10-K filings from the sidebar, then ask questions about revenues, risks, and financials.
             </p>
           </div>
@@ -59,12 +59,12 @@ export function ChatPane({ messages, loading, error, onSend, onCitationClick }: 
             </div>
             <span className="text-xs font-semibold text-zinc-500">FinanceSight</span>
           </div>
-          <div className="pl-7 flex items-center gap-1.5 text-sm text-zinc-400">
+          <div className="pl-7 flex items-center gap-1.5 text-sm text-zinc-400 dark:text-zinc-500">
             <span>Thinking</span>
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="w-1 h-1 bg-zinc-300 rounded-full animate-bounce"
+                className="w-1 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full animate-bounce"
                 style={{ animationDelay: `${i * 150}ms` }}
               />
             ))}
@@ -78,10 +78,10 @@ export function ChatPane({ messages, loading, error, onSend, onCitationClick }: 
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-zinc-200 px-4 py-4">
+      <div className="border-t border-zinc-200 dark:border-zinc-700 px-4 py-4">
         <div className="flex gap-3 items-end max-w-3xl mx-auto">
           <textarea
-            className="flex-1 resize-none rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-zinc-50 transition-shadow"
+            className="flex-1 resize-none rounded-xl border border-zinc-300 dark:border-zinc-600 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-zinc-50 dark:disabled:bg-zinc-900 transition-shadow"
             rows={2}
             placeholder="Ask about revenues, risks, comparisons..."
             value={input}
@@ -97,7 +97,7 @@ export function ChatPane({ messages, loading, error, onSend, onCitationClick }: 
             Send
           </button>
         </div>
-        <p className="text-[11px] text-zinc-400 text-center mt-2">Enter to send · Shift+Enter for newline</p>
+        <p className="text-[11px] text-zinc-400 dark:text-zinc-600 text-center mt-2">Enter to send · Shift+Enter for newline</p>
       </div>
     </div>
   );

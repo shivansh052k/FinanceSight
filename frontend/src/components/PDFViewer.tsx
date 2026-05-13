@@ -23,9 +23,11 @@ export function PDFViewer({ filename, page, activeCitation, onClose, onPageChang
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
   const pdfRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pageRef = useRef<pdfjsLib.PDFPageProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [scale, setScale] = useState(1.5);
   const [pdfReady, setPdfReady] = useState(false);
+  
 
   useEffect(() => {
     let cancelled = false;
@@ -49,7 +51,11 @@ export function PDFViewer({ filename, page, activeCitation, onClose, onPageChang
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+        cancelled = true;
+        pageRef.current?.cleanup();
+        pageRef.current = null;
+    };
   }, [filename]);
 
   useEffect(() => {
@@ -63,12 +69,18 @@ export function PDFViewer({ filename, page, activeCitation, onClose, onPageChang
       const safePage = Math.max(1, Math.min(page, pdf.numPages));
 
       if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
+          try { renderTaskRef.current.cancel(); } catch { /* already completed */ }
+          renderTaskRef.current = null;
+      }
+
+      if (pageRef.current) {
+          pageRef.current.cleanup();
+          pageRef.current = null;
       }
 
       try {
         const pdfPage = await pdf.getPage(safePage);
+        pageRef.current = pdfPage;
         const viewport = pdfPage.getViewport({ scale });
         canvas.width = viewport.width;
         canvas.height = viewport.height;
@@ -89,32 +101,32 @@ export function PDFViewer({ filename, page, activeCitation, onClose, onPageChang
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 bg-zinc-50 shrink-0 gap-2">
-        <span className="text-xs font-medium text-zinc-700 truncate" title={filename}>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 bg-zinc-50 shrink-0 dark:border-zinc-700 dark:bg-zinc-800 gap-2">
+        <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate" title={filename}>
           {filename}
         </span>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => setScale(s => Math.max(MIN_SCALE, +(s - SCALE_STEP).toFixed(2)))} disabled={scale <= MIN_SCALE} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">−</button>
-          <span className="text-xs text-zinc-500 w-10 text-center">{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(MAX_SCALE, +(s + SCALE_STEP).toFixed(2)))} disabled={scale >= MAX_SCALE} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">+</button>
+          <button onClick={() => setScale(s => Math.max(MIN_SCALE, +(s - SCALE_STEP).toFixed(2)))} disabled={scale <= MIN_SCALE} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-700 disabled:opacity-40">−</button>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 w-10 text-center">{Math.round(scale * 100)}%</span>
+          <button onClick={() => setScale(s => Math.min(MAX_SCALE, +(s + SCALE_STEP).toFixed(2)))} disabled={scale >= MAX_SCALE} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-700 disabled:opacity-40">+</button>
           <div className="w-px h-4 bg-zinc-200 mx-1" />
           <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">◀</button>
-          <span className="text-xs text-zinc-500 w-16 text-center">{page}{totalPages ? ` / ${totalPages}` : ""}</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 w-16 text-center">{page}{totalPages ? ` / ${totalPages}` : ""}</span>
           <button onClick={() => onPageChange(page + 1)} disabled={totalPages > 0 && page >= totalPages} className="px-2 py-1 text-xs rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-40">▶</button>
           <div className="w-px h-4 bg-zinc-200 mx-1" />
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-700 text-sm px-1">✕</button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200 text-sm px-1">✕</button>
         </div>
       </div>
 
       {activeCitation && (
-        <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 line-clamp-2 shrink-0">
+        <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 line-clamp-2 shrink-0">
           {activeCitation.text}
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-zinc-100 flex justify-center p-4">
+      <div className="flex-1 overflow-auto bg-zinc-100 dark:bg-zinc-900 flex justify-center p-4">
         {!pdfReady && (
-          <div className="flex items-center justify-center h-full text-sm text-zinc-400">Loading…</div>
+          <div className="flex items-center justify-center h-full text-sm text-zinc-400 dark:text-zinc-600">Loading…</div>
         )}
         <canvas ref={canvasRef} className={`shadow-md ${!pdfReady ? "hidden" : ""}`} />
       </div>

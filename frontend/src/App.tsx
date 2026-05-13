@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useChat } from "./hooks/useChat";
 import { useDocuments } from "./hooks/useDocuments";
 import { usePDFViewer } from "./hooks/usePDFViewer";
@@ -16,6 +16,11 @@ export default function App() {
   const [splitPercent, setSplitPercent] = useState(50);
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+      document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current || !containerRef.current) return;
@@ -34,18 +39,24 @@ export default function App() {
   const completeCount = documents.filter(d => d.status === "complete").length;
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
-      <aside className="w-64 flex flex-col bg-zinc-50 border-r border-zinc-200 shrink-0">
-        <div className="px-4 py-4 border-b border-zinc-200">
+    <div className="flex h-screen bg-white dark:bg-zinc-950 overflow-hidden">
+      <aside className="w-64 flex flex-col bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700 shrink-0">
+        <div className="px-4 py-4 border-b border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
               <span className="text-white text-[10px] font-bold">FS</span>
             </div>
             <div>
-              <h1 className="text-sm font-semibold text-zinc-900 leading-none">FinanceSight</h1>
+              <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-none">FinanceSight</h1>
               <p className="text-[10px] text-zinc-400 mt-0.5">SEC 10-K Q&A</p>
             </div>
           </div>
+          <button
+            onClick={() => setDarkMode(d => !d)}
+            className="ml-auto text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 text-sm"
+            title={darkMode ? "Light mode" : "Dark mode"}>
+            {darkMode ? "☀" : "☾"}
+          </button>
         </div>
 
         <div className="px-3 pt-3 pb-1">
@@ -58,7 +69,7 @@ export default function App() {
           <DocumentList documents={documents} totalChunks={totalChunks} onRemove={remove} />
         </div>
 
-        <div className="p-3 border-t border-zinc-200 space-y-1">
+        <div className="p-3 border-t border-zinc-200 dark:border-zinc-700 space-y-1">
           <button
             onClick={() => setShowUpload(true)}
             className="w-full py-2 px-3 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -90,7 +101,7 @@ export default function App() {
           <>
             <div
               onMouseDown={() => { isDragging.current = true; }}
-              className="w-1 bg-zinc-200 hover:bg-blue-400 active:bg-blue-500 cursor-col-resize transition-colors shrink-0"
+              className="w-1 bg-zinc-200 dark:bg-zinc-700 hover:bg-blue-400 active:bg-blue-500 cursor-col-resize transition-colors shrink-0"
             />
             <div style={{ width: `${100 - splitPercent}%` }} className="overflow-hidden">
               <PDFViewer
