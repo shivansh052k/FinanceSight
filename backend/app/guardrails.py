@@ -30,6 +30,12 @@ _INVESTMENT_REFUSAL = (
     "or hold any security. " + INVESTMENT_DISCLAIMER
 )
 
+_OUT_OF_SCOPE_REFUSAL = (
+    "This system answers questions about financial data in SEC 10-K filings only. "
+    "Questions about product health benefits, medical applications, or non-financial topics "
+    "are outside the scope of this knowledge base."
+)
+
 # PII: (label, compiled pattern) — label used in logs, never log query content
 _PII_PATTERNS: List[Tuple[str, re.Pattern]] = [
     (
@@ -91,6 +97,7 @@ _INVESTMENT_PATTERNS: List[re.Pattern] = [
         re.IGNORECASE,
     ),
     re.compile(r'\bshould\s+i\s+invest\b', re.IGNORECASE),
+    # re.compile(r'\bhealth\s+benefit', re.IGNORECASE),
 ]
 
 _MEDICAL_PATTERNS: List[re.Pattern] = [
@@ -100,6 +107,12 @@ _MEDICAL_PATTERNS: List[re.Pattern] = [
         re.IGNORECASE,
     ),
     re.compile(r'\bmedical\s+advice\b', re.IGNORECASE),
+    re.compile(r'\b(health\s+benefit|wellness|medical\s+use|clinical)\b', re.IGNORECASE),
+]
+
+_OUT_OF_SCOPE_PATTERNS: List[re.Pattern] = [
+    re.compile(r'\bhealth\s+benefit', re.IGNORECASE),
+    re.compile(r'\bphysical\s+benefit', re.IGNORECASE),
 ]
 
 
@@ -158,6 +171,15 @@ def check(query: str) -> GuardrailResult:
                 allowed=True,
                 refusal_message=None,
                 disclaimer=MEDICAL_DISCLAIMER,
+            )
+    
+    for pattern in _OUT_OF_SCOPE_PATTERNS:
+        if pattern.search(query):
+            logger.warning("Guardrails: out-of-scope query detected — refused.")
+            return GuardrailResult(
+                allowed=False,
+                refusal_message=_OUT_OF_SCOPE_REFUSAL,
+                disclaimer=None,
             )
 
     return GuardrailResult(allowed=True, refusal_message=None, disclaimer=None)

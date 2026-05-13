@@ -14,7 +14,7 @@ SIMILARITY_THRESHOLD = 0.35   # below this → insufficient evidence, no LLM cal
 MAX_HISTORY_TURNS = 6         # cap conversation history injected into prompt
 
 _INTENT_INSTRUCTIONS: Dict[str, str] = {
-    "factual":       "Answer in 1-3 concise sentences with exact figures and units. Cite every claim with [N] markers.",
+    "factual":       "Answer in 1-3 concise sentences with exact figures and units. If only segment breakdowns are available, sum them and state the total explicitly. Cite every claim with [N] markers.",
     "list":          "Answer as a markdown bulleted list. Every item must be specific, drawn from context, and cited with [N].",
     "table":         "Answer as a markdown table with clear column headers and exact figures. Cite the source of each row.",
     "comparison":    "Directly compare the entities or time periods using specific figures. Structure clearly. Cite every data point.",
